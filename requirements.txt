@@ -1,0 +1,16 @@
+Flask
+Flask-SQLAlchemy
+Flask-Bcrypt
+requests
+httpx
+urllib3
+beautifulsoup4
+lxml
+psutil
+python-telegram-bot
+Werkzeug
+itsdangerous
+Jinja2
+click
+greenlet
+typing_extensions
