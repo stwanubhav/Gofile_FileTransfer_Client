@@ -1,0 +1,228 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Ultra Transfer{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 15px;
+    }
+    .stat-item {
+        background: rgba(255,255,255,0.02);
+        padding: 15px 20px;
+        border-radius: 12px;
+        text-align: center;
+        border: 1px solid rgba(255,255,255,0.03);
+    }
+    .stat-item .number { font-size: 26px; font-weight: 700; color: #4fc3f7; display: block; }
+    .stat-item .label { font-size: 12px; color: #8899aa; margin-top: 4px; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 12px; color: #8899aa; font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); vertical-align: middle; }
+    tr:hover { background: rgba(255,255,255,0.02); }
+
+    .user-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .empty-state { text-align: center; padding: 30px 20px; color: #556677; }
+
+    @media (max-width: 768px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block navbar %}
+<nav class="navbar">
+    <a href="/admin" class="navbar-brand">⚙️ Admin <span>Panel</span></a>
+    <div class="navbar-info">
+        <a href="/dashboard" class="btn-back">← Dashboard</a>
+        <span style="color:#8899aa;font-size:14px;">👤 Admin</span>
+        <button class="btn-logout" onclick="logout()">Logout</button>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-title">📊 System Stats</div>
+    <div class="stats-grid" id="stats-grid">
+        <div class="stat-item"><span class="number" id="stat-users">0</span><span class="label">Users</span></div>
+        <div class="stat-item"><span class="number" id="stat-tasks">0</span><span class="label">Total Tasks</span></div>
+        <div class="stat-item"><span class="number" id="stat-completed">0</span><span class="label">Completed</span></div>
+        <div class="stat-item"><span class="number" id="stat-failed">0</span><span class="label">Failed</span></div>
+        <div class="stat-item"><span class="number" id="stat-processing">0</span><span class="label">Processing</span></div>
+        <div class="stat-item"><span class="number" id="stat-queued">0</span><span class="label">Queued</span></div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">👥 Users</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Tasks</th>
+                    <th>Joined</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="users-body">
+                <tr><td colspan="6" class="empty-state">Loading users...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-title">📋 Recent Tasks</div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>File</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Link</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+            <tbody id="tasks-body">
+                <tr><td colspan="7" class="empty-state">Loading tasks...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function loadStats() {
+        try {
+            const response = await fetch('/api/admin/stats');
+            const data = await response.json();
+            document.getElementById('stat-users').textContent = data.total_users || 0;
+            document.getElementById('stat-tasks').textContent = data.total_tasks || 0;
+            document.getElementById('stat-completed').textContent = data.completed || 0;
+            document.getElementById('stat-failed').textContent = data.failed || 0;
+            document.getElementById('stat-processing').textContent = data.processing || 0;
+            document.getElementById('stat-queued').textContent = data.queued || 0;
+        } catch (error) {
+            console.error('Failed to load stats:', error);
+        }
+    }
+
+    async function loadUsers() {
+        try {
+            const response = await fetch('/api/admin/users');
+            const data = await response.json();
+            const tbody = document.getElementById('users-body');
+            if (!data.users || data.users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No users found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.users.map(u => `
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.username}</td>
+                    <td>${u.email}</td>
+                    <td>${u.task_count}</td>
+                    <td style="font-size:12px;color:#556677;">${u.created_at}</td>
+                    <td>
+                        <div class="user-actions">
+                            <button class="btn-sm btn-sm-admin ${u.is_admin ? 'active' : ''}" onclick="toggleAdmin(${u.id}, ${!u.is_admin})">
+                                ${u.is_admin ? '👑 Admin' : 'Make Admin'}
+                            </button>
+                            <button class="btn-sm btn-sm-danger" onclick="deleteUser(${u.id})">🗑 Delete</button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Failed to load users:', error);
+        }
+    }
+
+    async function loadTasks() {
+        try {
+            const response = await fetch('/api/admin/tasks?limit=50');
+            const data = await response.json();
+            const tbody = document.getElementById('tasks-body');
+            if (!data.tasks || data.tasks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No tasks found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = data.tasks.map(t => `
+                <tr>
+                    <td>${t.id}</td>
+                    <td style="color:#8899aa;">${t.username || 'Unknown'}</td>
+                    <td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${t.filename}">${t.filename || '—'}</td>
+                    <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                    <td>${t.progress.toFixed(1)}%</td>
+                    <td>${t.gofile_link ? `<a href="${t.gofile_link}" target="_blank" class="link">🔗</a>` : '—'}</td>
+                    <td style="font-size:12px;color:#556677;">${t.created_at}</td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            console.error('Failed to load tasks:', error);
+        }
+    }
+
+    async function toggleAdmin(userId, makeAdmin) {
+        try {
+            const response = await fetch(`/api/admin/user/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ is_admin: makeAdmin })
+            });
+            const result = await response.json();
+            if (response.ok) {
+                loadUsers();
+                showToast('✅ User updated', 'success');
+            } else {
+                showToast('❌ ' + (result.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            showToast('❌ Network error', 'error');
+        }
+    }
+
+    async function deleteUser(userId) {
+        if (!confirm('Delete this user and all their tasks?')) return;
+        try {
+            const response = await fetch(`/api/admin/user/${userId}`, {
+                method: 'DELETE'
+            });
+            const result = await response.json();
+            if (response.ok) {
+                loadUsers();
+                loadStats();
+                showToast('✅ User deleted', 'success');
+            } else {
+                showToast('❌ ' + (result.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            showToast('❌ Network error', 'error');
+        }
+    }
+
+    function refreshAll() {
+        loadStats();
+        loadUsers();
+        loadTasks();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        refreshAll();
+        setInterval(refreshAll, 10000);
+    });
+</script>
+{% endblock %}
