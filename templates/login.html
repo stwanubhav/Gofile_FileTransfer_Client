@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Ultra Transfer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            width: 100%;
+        }
+        .auth-box {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #fff; font-size: 28px; font-weight: 700; }
+        .logo span { color: #4fc3f7; }
+        .logo p { color: #8899aa; margin-top: 5px; font-size: 14px; }
+        h2 { color: #fff; font-size: 24px; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { color: #ccd6e0; display: block; margin-bottom: 8px; font-size: 14px; }
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 20px rgba(79,195,247,0.15);
+        }
+        .form-group input::placeholder { color: #556677; }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #4fc3f7, #2196f3);
+            color: #fff;
+            margin-top: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(33,150,243,0.3); }
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.2);
+            margin-top: 10px;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); box-shadow: none; }
+        .switch { text-align: center; margin-top: 20px; color: #8899aa; }
+        .switch a { color: #4fc3f7; text-decoration: none; cursor: pointer; }
+        .switch a:hover { text-decoration: underline; }
+        .error { color: #ff6b6b; font-size: 14px; margin-top: 8px; display: none; }
+        .success { color: #51cf66; font-size: 14px; margin-top: 8px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="logo">
+                <h1>🚀 Ultra <span>Transfer</span></h1>
+                <p>Fast Download & Upload to GoFile</p>
+            </div>
+            <h2 id="form-title">Login</h2>
+            <form id="auth-form" onsubmit="return false;">
+                <div id="register-fields" style="display:none;">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="reg-username" placeholder="Choose a username">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="reg-email" placeholder="your@email.com">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="Enter your username">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter your password">
+                </div>
+                <div id="error-msg" class="error"></div>
+                <div id="success-msg" class="success"></div>
+                <button type="button" class="btn" id="submit-btn" onclick="handleSubmit()">Login</button>
+                <button type="button" class="btn btn-secondary" id="switch-btn" onclick="toggleForm()">Don't have an account? Register</button>
+            </form>
+            <div class="switch">
+                <span id="switch-message">Don't have an account? <a href="/register">Register</a></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isLogin = true;
+
+        function toggleForm() {
+            isLogin = !isLogin;
+            const title = document.getElementById('form-title');
+            const submitBtn = document.getElementById('submit-btn');
+            const switchBtn = document.getElementById('switch-btn');
+            const regFields = document.getElementById('register-fields');
+            const switchMsg = document.getElementById('switch-message');
+
+            if (isLogin) {
+                title.textContent = 'Login';
+                submitBtn.textContent = 'Login';
+                switchBtn.textContent = "Don't have an account? Register";
+                regFields.style.display = 'none';
+                switchMsg.innerHTML = "Don't have an account? <a href='/register'>Register</a>";
+            } else {
+                title.textContent = 'Register';
+                submitBtn.textContent = 'Register';
+                switchBtn.textContent = 'Already have an account? Login';
+                regFields.style.display = 'block';
+                switchMsg.innerHTML = "Already have an account? <a href='/login'>Login</a>";
+            }
+            document.getElementById('error-msg').style.display = 'none';
+            document.getElementById('success-msg').style.display = 'none';
+        }
+
+        async function handleSubmit() {
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Processing...';
+
+            let data = {};
+            let endpoint = '';
+
+            if (isLogin) {
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!username || !password) {
+                    errorMsg.textContent = 'Please fill in all fields';
+                    errorMsg.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Login';
+                    return;
+                }
+                
+                data = { username, password };
+                endpoint = '/api/login';
+            } else {
+                const username = document.getElementById('reg-username').value.trim();
+                const email = document.getElementById('reg-email').value.trim();
+                const password = document.getElementById('password').value;
+                
+                if (!username || !email || !password) {
+                    errorMsg.textContent = 'All fields are required';
+                    errorMsg.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Register';
+                    return;
+                }
+                
+                data = { username, email, password };
+                endpoint = '/api/register';
+            }
+
+            try {
+                console.log('Sending to:', endpoint, data);
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                console.log('Response:', result);
+
+                if (response.ok) {
+                    if (isLogin) {
+                        successMsg.textContent = '✅ Login successful! Redirecting...';
+                        successMsg.style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = '/dashboard';
+                        }, 1000);
+                    } else {
+                        successMsg.textContent = '✅ Registration successful! Please login.';
+                        successMsg.style.display = 'block';
+                        document.getElementById('username').value = data.username;
+                        document.getElementById('password').value = '';
+                        setTimeout(() => {
+                            toggleForm();
+                        }, 1500);
+                    }
+                } else {
+                    errorMsg.textContent = result.error || 'Something went wrong';
+                    errorMsg.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                errorMsg.textContent = '❌ Network error. Please check if the server is running.';
+                errorMsg.style.display = 'block';
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = isLogin ? 'Login' : 'Register';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const form = document.getElementById('auth-form');
+                if (form.contains(e.target)) {
+                    handleSubmit();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
