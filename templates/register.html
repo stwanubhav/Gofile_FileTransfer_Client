@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Ultra Transfer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .auth-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 80vh;
+            width: 100%;
+        }
+        .auth-box {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 30px;
+            padding: 50px;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+        }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #fff; font-size: 28px; font-weight: 700; }
+        .logo span { color: #4fc3f7; }
+        .logo p { color: #8899aa; margin-top: 5px; font-size: 14px; }
+        h2 { color: #fff; font-size: 24px; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { color: #ccd6e0; display: block; margin-bottom: 8px; font-size: 14px; }
+        .form-group input {
+            width: 100%;
+            padding: 14px 18px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 20px rgba(79,195,247,0.15);
+        }
+        .form-group input::placeholder { color: #556677; }
+        .btn {
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, #4fc3f7, #2196f3);
+            color: #fff;
+            margin-top: 10px;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(33,150,243,0.3); }
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.2);
+            margin-top: 10px;
+        }
+        .btn-secondary:hover { background: rgba(255,255,255,0.05); box-shadow: none; }
+        .switch { text-align: center; margin-top: 20px; color: #8899aa; }
+        .switch a { color: #4fc3f7; text-decoration: none; cursor: pointer; }
+        .switch a:hover { text-decoration: underline; }
+        .error { color: #ff6b6b; font-size: 14px; margin-top: 8px; display: none; }
+        .success { color: #51cf66; font-size: 14px; margin-top: 8px; display: none; }
+        .password-hint {
+            font-size: 12px;
+            color: #556677;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <div class="logo">
+                <h1>🚀 Ultra <span>Transfer</span></h1>
+                <p>Create your account</p>
+            </div>
+            <h2>Register</h2>
+            <form id="register-form" onsubmit="return false;">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="reg-username" placeholder="Choose a username" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="reg-email" placeholder="your@email.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="reg-password" placeholder="Create a strong password" required>
+                    <div class="password-hint">Minimum 6 characters</div>
+                </div>
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <input type="password" id="reg-password-confirm" placeholder="Confirm your password" required>
+                </div>
+                <div id="error-msg" class="error"></div>
+                <div id="success-msg" class="success"></div>
+                <button type="button" class="btn" id="submit-btn" onclick="handleRegister()">Create Account</button>
+                <a href="/login" class="btn btn-secondary" style="text-align:center;display:block;text-decoration:none;">← Back to Login</a>
+            </form>
+            <div class="switch">
+                Already have an account? <a href="/login">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function handleRegister() {
+            const errorMsg = document.getElementById('error-msg');
+            const successMsg = document.getElementById('success-msg');
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            const username = document.getElementById('reg-username').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const password = document.getElementById('reg-password').value;
+            const passwordConfirm = document.getElementById('reg-password-confirm').value;
+
+            if (!username || !email || !password) {
+                errorMsg.textContent = 'All fields are required';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (password.length < 6) {
+                errorMsg.textContent = 'Password must be at least 6 characters';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            if (password !== passwordConfirm) {
+                errorMsg.textContent = 'Passwords do not match';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+
+            try {
+                console.log('Sending registration request...');
+                
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, email, password })
+                });
+                
+                const result = await response.json();
+                console.log('Registration response:', result);
+
+                if (response.ok) {
+                    successMsg.textContent = '✅ Account created successfully! Redirecting to login...';
+                    successMsg.style.display = 'block';
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                } else {
+                    errorMsg.textContent = result.error || 'Registration failed';
+                    errorMsg.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Account';
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                errorMsg.textContent = '❌ Network error. Please check if the server is running.';
+                errorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Account';
+            }
+        }
+
+        // Allow Enter key to submit
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const form = document.getElementById('register-form');
+                if (form.contains(e.target)) {
+                    handleRegister();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
