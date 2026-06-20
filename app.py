@@ -509,6 +509,7 @@ def process_single_task(task_id):
             return
     
     file_path = None
+    actual_filename = None
     
     try:
         log.info(f"Processing task {task_id}: {task.url}")
@@ -533,10 +534,11 @@ def process_single_task(task_id):
             db.session.commit()
         
         final_url, filename, file_size = _resolve_url(direct_url)
+        actual_filename = filename
         log.info(f"File: {filename}, Size: {file_size} bytes")
         
         with app.app_context():
-            task.filename = filename
+            task.filename = filename  # Set the actual filename here
             if file_size > 0:
                 task.file_size = file_size
             db.session.commit()
@@ -581,7 +583,7 @@ def process_single_task(task_id):
         log.info(f"Starting upload to GoFile: {filename}")
         download_page = _gofile_upload(file_path, filename, token, task_id, upload_callback)
         
-        # IMPORTANT: Update task as completed
+        # IMPORTANT: Update task as completed with all fields
         with app.app_context():
             task = db.session.get(Task, task_id)
             if task:
@@ -589,10 +591,11 @@ def process_single_task(task_id):
                 task.status = 'completed'
                 task.progress = 100
                 task.uploaded_bytes = task.file_size
+                task.filename = filename  # Ensure filename is set
                 task.completed_at = datetime.utcnow()
                 task.updated_at = datetime.utcnow()
                 db.session.commit()
-                log.info(f"Task {task_id} marked as completed in database")
+                log.info(f"Task {task_id} marked as completed in database with filename: {filename}")
         
         log.info(f"Task {task_id} completed successfully: {download_page}")
         
@@ -603,6 +606,8 @@ def process_single_task(task_id):
             if task:
                 task.status = 'failed'
                 task.error_message = str(e)
+                if actual_filename:
+                    task.filename = actual_filename
                 db.session.commit()
         raise
     finally:
@@ -822,7 +827,7 @@ def get_tasks():
                 'id': t.id,
                 'url': t.url,
                 'source_type': t.source_type,
-                'filename': t.filename or 'Resolving...',
+                'filename': t.filename or 'Unknown',
                 'file_size': fmt_size(t.file_size) if t.file_size > 0 else 'Unknown',
                 'status': t.status,
                 'progress': t.progress,
@@ -838,6 +843,33 @@ def get_tasks():
         })
     except Exception as e:
         log.error(f"Get tasks error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/task/<int:task_id>', methods=['DELETE'])
+@login_required
+def delete_task(task_id):
+    try:
+        user_id = session['user_id']
+        task = db.session.get(Task, task_id)
+        
+        if not task:
+            return jsonify({'error': 'Task not found'}), 404
+        
+        if task.user_id != user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        # Check if task is currently processing
+        with task_lock:
+            if user_id in active_tasks and active_tasks[user_id] == task_id:
+                return jsonify({'error': 'Cannot delete task that is currently processing'}), 400
+        
+        db.session.delete(task)
+        db.session.commit()
+        
+        log.info(f"Task {task_id} deleted by user {user_id}")
+        return jsonify({'message': 'Task deleted successfully'})
+    except Exception as e:
+        log.error(f"Delete task error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/tasks/active')
@@ -1047,11 +1079,11 @@ def server_status():
 
 def create_default_admin():
     with app.app_context():
-        admin = User.query.filter_by(username='yourusername').first()
+        admin = User.query.filter_by(username='user').first()
         if not admin:
-            password_hash = bcrypt.generate_password_hash('yourpass').decode('utf-8')
+            password_hash = bcrypt.generate_password_hash('pass').decode('utf-8')
             admin = User(
-                username='yourusername',
+                username='user',
                 email='admin@example.com',
                 password_hash=password_hash,
                 is_admin=True
