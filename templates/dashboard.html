@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Ultra Transfer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e1a;
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .toast.show { display: block; animation: slideUp 0.3s ease; }
+        .toast.error { border-left: 4px solid #ef5350; }
+        .toast.success { border-left: 4px solid #81c784; }
+        .toast.info { border-left: 4px solid #4fc3f7; }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .navbar {
+            background: rgba(20, 30, 50, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-brand {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+        .navbar-brand span { color: #4fc3f7; }
+        .navbar-info { display: flex; align-items: center; gap: 20px; }
+        .navbar-info .username { color: #8899aa; font-size: 14px; }
+        .navbar-info .admin-link { color: #4fc3f7; text-decoration: none; font-size: 13px; }
+        .navbar-info .admin-link:hover { text-decoration: underline; }
+        .btn-logout {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: rgba(255,107,107,0.15); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px; }
+
+        .card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 25px;
+        }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #ccd6e0; }
+
+        .url-input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .url-input-group input {
+            flex: 1;
+            min-width: 250px;
+            padding: 14px 18px;
+            border: 2px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            background: rgba(255,255,255,0.03);
+            color: #fff;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        .url-input-group input:focus {
+            outline: none;
+            border-color: #4fc3f7;
+            box-shadow: 0 0 30px rgba(79,195,247,0.05);
+        }
+        .url-input-group input::placeholder { color: #556677; }
+        .btn-primary {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4fc3f7, #2196f3);
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(33,150,243,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .token-section {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .token-section input {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 2px solid rgba(255,255,255,0.08);
+            border-radius: 8px;
+            background: rgba(255,255,255,0.03);
+            color: #fff;
+            font-size: 14px;
+        }
+        .token-section input:focus {
+            outline: none;
+            border-color: #4fc3f7;
+        }
+        .token-section .btn-sm {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(79,195,247,0.1);
+            color: #4fc3f7;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .token-section .btn-sm:hover { background: rgba(79,195,247,0.2); }
+        .token-section .hint {
+            font-size: 12px;
+            color: #556677;
+        }
+        .token-section .hint a { color: #4fc3f7; }
+
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4fc3f7, #2196f3);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 13px;
+            color: #8899aa;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .progress-status { color: #4fc3f7; font-weight: 600; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.02);
+            padding: 15px 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .stat-item .number { font-size: 28px; font-weight: 700; color: #4fc3f7; display: block; }
+        .stat-item .label { font-size: 12px; color: #8899aa; margin-top: 4px; }
+
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .server-item { font-size: 13px; color: #8899aa; }
+        .server-item .value { color: #ccd6e0; font-weight: 500; }
+
+        .table-wrap { overflow-x: auto; }
+        .tasks-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        .tasks-table th {
+            text-align: left;
+            padding: 12px 15px;
+            color: #8899aa;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .tasks-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            vertical-align: middle;
+        }
+        .tasks-table tr:hover { background: rgba(255,255,255,0.02); }
+        .filename { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .status-queued { background: rgba(255,193,7,0.15); color: #ffc107; }
+        .status-downloading { background: rgba(33,150,243,0.15); color: #4fc3f7; }
+        .status-uploading { background: rgba(156,39,176,0.15); color: #ce93d8; }
+        .status-completed { background: rgba(76,175,80,0.15); color: #81c784; }
+        .status-failed { background: rgba(244,67,54,0.15); color: #ef5350; }
+
+        .link { color: #4fc3f7; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: #556677; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 15px; display: block; }
+
+        @media (max-width: 768px) {
+            .navbar { flex-wrap: wrap; gap: 10px; padding: 12px 15px; }
+            .container { padding: 15px; }
+            .url-input-group input { min-width: 100%; }
+            .btn-primary { width: 100%; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .token-section { flex-direction: column; }
+            .token-section input { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="/dashboard" class="navbar-brand">🚀 Ultra <span>Transfer</span></a>
+        <div class="navbar-info">
+            <span class="username" id="username-display">👤 Loading...</span>
+            <a href="/admin" class="admin-link" id="admin-link" style="display:none;">⚙️ Admin</a>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- URL Input -->
+        <div class="card">
+            <div class="card-title">📥 Add Download Link</div>
+            <div class="url-input-group">
+                <input type="text" id="url-input" placeholder="Paste MediaFire or direct download link...">
+                <button class="btn-primary" id="add-btn" onclick="addTask()">➕ Add to Queue</button>
+            </div>
+            
+            <div class="token-section">
+                <input type="text" id="token-input" placeholder="GoFile API Token (optional)">
+                <button class="btn-sm" onclick="setToken()">💾 Save Token</button>
+                <span class="hint">Get token at <a href="https://gofile.io/myProfile" target="_blank">gofile.io/myProfile</a></span>
+            </div>
+        </div>
+
+        <!-- Active Progress -->
+        <div class="card" id="progress-card" style="display:none;">
+            <div class="card-title" id="progress-title">📊 Processing</div>
+            <div id="progress-filename" style="color:#8899aa;font-size:14px;margin-bottom:10px;"></div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progress-fill"></div>
+            </div>
+            <div class="progress-info">
+                <span id="progress-status">⏳ Queued</span>
+                <span id="progress-size">0 B / 0 B</span>
+                <span id="progress-speed">🚀 0 B/s</span>
+                <span id="progress-eta">⏱ ∞</span>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="stats-grid" id="stats-grid">
+            <div class="stat-item"><span class="number" id="stat-queued">0</span><span class="label">Queued</span></div>
+            <div class="stat-item"><span class="number" id="stat-downloading">0</span><span class="label">Downloading</span></div>
+            <div class="stat-item"><span class="number" id="stat-uploading">0</span><span class="label">Uploading</span></div>
+            <div class="stat-item"><span class="number" id="stat-completed">0</span><span class="label">Completed</span></div>
+            <div class="stat-item"><span class="number" id="stat-failed">0</span><span class="label">Failed</span></div>
+        </div>
+
+        <!-- Server Status -->
+        <div class="card">
+            <div class="card-title">🖥 Server Status</div>
+            <div class="server-grid" id="server-status">
+                <div class="server-item">CPU: <span class="value" id="server-cpu">0%</span></div>
+                <div class="server-item">RAM: <span class="value" id="server-ram">0%</span></div>
+                <div class="server-item">Disk: <span class="value" id="server-disk">0%</span></div>
+            </div>
+        </div>
+
+        <!-- Task List -->
+        <div class="card">
+            <div class="card-title">📋 Task History</div>
+            <div class="table-wrap">
+                <table class="tasks-table">
+                    <thead>
+                        <tr>
+                            <th>File</th>
+                            <th>Size</th>
+                            <th>Status</th>
+                            <th>Progress</th>
+                            <th>Link</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tasks-body">
+                        <tr><td colspan="6" class="empty-state"><span class="icon">📭</span>No tasks yet. Add a link to get started!</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        let refreshInterval = null;
+        let currentUser = null;
+
+        function showToast(msg, type = 'info') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + type;
+            clearTimeout(t._hide);
+            t._hide = setTimeout(() => t.classList.remove('show'), 5000);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function getCurrentUser() {
+            try {
+                const response = await fetch('/api/user');
+                const data = await response.json();
+                if (response.ok) {
+                    currentUser = data;
+                    document.getElementById('username-display').textContent = '👤 ' + data.username;
+                    if (data.is_admin) {
+                        document.getElementById('admin-link').style.display = 'inline';
+                    }
+                    return data;
+                } else {
+                    window.location.href = '/login';
+                }
+            } catch (error) {
+                console.error('Failed to get user:', error);
+                window.location.href = '/login';
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                window.location.href = '/login';
+            }
+        }
+
+        async function addTask() {
+            const input = document.getElementById('url-input');
+            const url = input.value.trim();
+            if (!url) {
+                showToast('Please enter a URL', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('add-btn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Adding...';
+
+            try {
+                const response = await fetch('/api/task', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const result = await response.json();
+
+                if (response.ok) {
+                    showToast('✅ Task added to queue!', 'success');
+                    input.value = '';
+                    loadTasks();
+                } else {
+                    showToast('❌ ' + (result.error || 'Failed to add task'), 'error');
+                }
+            } catch (error) {
+                showToast('❌ Network error', 'error');
+            }
+            btn.disabled = false;
+            btn.textContent = '➕ Add to Queue';
+        }
+
+        async function setToken() {
+            const token = document.getElementById('token-input').value.trim();
+            if (!token) {
+                showToast('Please enter a token', 'error');
+                return;
+            }
+            try {
+                const response = await fetch('/api/set_gofile_token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token })
+                });
+                const result = await response.json();
+                if (response.ok) {
+                    showToast('✅ Token saved!', 'success');
+                } else {
+                    showToast('❌ ' + (result.error || 'Failed to save token'), 'error');
+                }
+            } catch (error) {
+                showToast('❌ Network error', 'error');
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/tasks');
+                const data = await response.json();
+
+                const tbody = document.getElementById('tasks-body');
+                if (!data.tasks || data.tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><span class="icon">📭</span>No tasks yet. Add a link to get started!</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.tasks.map(t => `
+                    <tr>
+                        <td><span class="filename" title="${t.filename}">${t.filename || '—'}</span></td>
+                        <td>${t.file_size}</td>
+                        <td><span class="status-badge status-${t.status}">${t.status}</span></td>
+                        <td>${t.progress.toFixed(1)}%</td>
+                        <td>${t.gofile_link ? `<a href="${t.gofile_link}" target="_blank" class="link">🔗 Open</a>` : '—'}</td>
+                        <td style="font-size:12px;color:#556677;">${t.created_at}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load tasks:', error);
+            }
+        }
+
+        async function loadActiveTask() {
+            try {
+                const response = await fetch('/api/tasks/active');
+                const data = await response.json();
+
+                const card = document.getElementById('progress-card');
+                if (data.active && data.task) {
+                    card.style.display = 'block';
+                    document.getElementById('progress-filename').textContent = '📁 ' + data.task.filename;
+                    document.getElementById('progress-fill').style.width = data.task.progress + '%';
+                    document.getElementById('progress-status').textContent = '📊 ' + data.task.status;
+                    document.getElementById('progress-size').textContent = data.task.downloaded + ' / ' + data.task.file_size;
+                    document.getElementById('progress-speed').textContent = '🚀 ' + data.task.speed;
+                    document.getElementById('progress-eta').textContent = '⏱ ' + data.task.eta;
+
+                    document.getElementById('progress-title').textContent = 
+                        data.task.status === 'downloading' ? '📥 Downloading...' : 
+                        data.task.status === 'uploading' ? '📤 Uploading...' : '⏳ Processing';
+                } else {
+                    card.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Failed to load active task:', error);
+            }
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/queue/status');
+                const data = await response.json();
+
+                document.getElementById('stat-queued').textContent = data.queued || 0;
+                document.getElementById('stat-downloading').textContent = data.downloading || 0;
+                document.getElementById('stat-uploading').textContent = data.uploading || 0;
+
+                const tasksResp = await fetch('/api/tasks');
+                const tasksData = await tasksResp.json();
+                let completed = 0, failed = 0;
+                if (tasksData.tasks) {
+                    completed = tasksData.tasks.filter(t => t.status === 'completed').length;
+                    failed = tasksData.tasks.filter(t => t.status === 'failed').length;
+                }
+                document.getElementById('stat-completed').textContent = completed;
+                document.getElementById('stat-failed').textContent = failed;
+            } catch (error) {
+                console.error('Failed to load stats:', error);
+            }
+        }
+
+        async function loadServerStatus() {
+            try {
+                const response = await fetch('/api/server/status');
+                const data = await response.json();
+                document.getElementById('server-cpu').textContent = data.cpu_percent.toFixed(1) + '%';
+                document.getElementById('server-ram').textContent = data.memory_percent.toFixed(1) + '%';
+                document.getElementById('server-disk').textContent = data.disk_percent.toFixed(1) + '%';
+            } catch (error) {
+                console.error('Failed to load server status:', error);
+            }
+        }
+
+        function refreshAll() {
+            loadTasks();
+            loadActiveTask();
+            loadStats();
+            loadServerStatus();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            await getCurrentUser();
+            refreshAll();
+            refreshInterval = setInterval(refreshAll, 3000);
+
+            document.getElementById('url-input').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') addTask();
+            });
+        });
+
+        window.addEventListener('beforeunload', function() {
+            if (refreshInterval) clearInterval(refreshInterval);
+        });
+    </script>
+</body>
+</html>
