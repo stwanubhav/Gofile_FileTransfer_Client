@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}🚀 Ultra Transfer{% endblock %}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e1a;
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            background: rgba(0,0,0,0.9);
+            color: #fff;
+            font-size: 14px;
+            z-index: 1000;
+            display: none;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .toast.show { display: block; animation: slideUp 0.3s ease; }
+        .toast.error { border-left: 4px solid #ef5350; }
+        .toast.success { border-left: 4px solid #81c784; }
+        .toast.info { border-left: 4px solid #4fc3f7; }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .navbar {
+            background: rgba(20, 30, 50, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .navbar-brand {
+            font-size: 22px;
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+        }
+        .navbar-brand span { color: #4fc3f7; }
+        .navbar-info { display: flex; align-items: center; gap: 20px; }
+        .navbar-info .username { color: #8899aa; font-size: 14px; }
+        .navbar-info .admin-link { color: #4fc3f7; text-decoration: none; font-size: 13px; }
+        .navbar-info .admin-link:hover { text-decoration: underline; }
+        .btn-logout {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        .btn-logout:hover { background: rgba(255,107,107,0.15); }
+        .btn-back {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
+            color: #4fc3f7;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .btn-back:hover { background: rgba(79,195,247,0.1); }
+
+        .container { max-width: 1200px; margin: 0 auto; padding: 30px; }
+
+        .card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 25px;
+        }
+        .card-title { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #ccd6e0; }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .status-queued { background: rgba(255,193,7,0.15); color: #ffc107; }
+        .status-downloading { background: rgba(33,150,243,0.15); color: #4fc3f7; }
+        .status-uploading { background: rgba(156,39,176,0.15); color: #ce93d8; }
+        .status-completed { background: rgba(76,175,80,0.15); color: #81c784; }
+        .status-failed { background: rgba(244,67,54,0.15); color: #ef5350; }
+
+        .link { color: #4fc3f7; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+
+        .btn-primary {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #4fc3f7, #2196f3);
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(33,150,243,0.3); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-sm {
+            padding: 4px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-sm-admin { background: rgba(79,195,247,0.15); color: #4fc3f7; }
+        .btn-sm-admin:hover { background: rgba(79,195,247,0.25); }
+        .btn-sm-admin.active { background: #4fc3f7; color: #0a0e1a; }
+        .btn-sm-danger { background: rgba(244,67,54,0.15); color: #ef5350; }
+        .btn-sm-danger:hover { background: rgba(244,67,54,0.25); }
+
+        @media (max-width: 768px) {
+            .navbar { flex-wrap: wrap; gap: 10px; padding: 12px 15px; }
+            .container { padding: 15px; }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    {% block navbar %}
+    <nav class="navbar">
+        <a href="/dashboard" class="navbar-brand">🚀 Ultra <span>Transfer</span></a>
+        <div class="navbar-info">
+            {% if user %}
+            <span class="username">👤 {{ user.username }}</span>
+            {% if user.is_admin %}
+            <a href="/admin" class="admin-link">⚙️ Admin</a>
+            {% endif %}
+            <button class="btn-logout" onclick="logout()">Logout</button>
+            {% endif %}
+        </div>
+    </nav>
+    {% endblock %}
+
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        function showToast(msg, type = 'info') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + type;
+            clearTimeout(t._hide);
+            t._hide = setTimeout(() => t.classList.remove('show'), 5000);
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                window.location.href = '/login';
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
